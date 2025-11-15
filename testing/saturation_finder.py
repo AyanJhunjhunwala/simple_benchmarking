@@ -179,45 +179,15 @@ async def poll_queue_metrics(
                         parsed, _, _ = parse_prometheus_metrics(text)
 
                         if backend == "sglang":
-                            # Accept both colon-style and underscore-style metric names
-                            num_wait = int(_pick(
-                                parsed,
-                                "sglang:num_queue_reqs", "sglang:num_queued_reqs",  # colon style
-                                "sglang_num_queue_reqs", "sglang_num_queued_reqs",  # underscore style
-                                default=0
-                            ))
-                            num_run = int(_pick(
-                                parsed,
-                                "sglang:num_running_reqs", "sglang:num_active_reqs",
-                                "sglang_num_running_reqs", "sglang_num_active_reqs",
-                                default=0
-                            ))
-                            # token usage sometimes exported as a ratio (0..1) or percent
-                            token_pct = _pick_percent(
-                                parsed,
-                                "sglang:token_usage", "sglang:gpu_kv_cache_usage_ratio",
-                                "sglang_token_usage", "sglang_gpu_kv_cache_usage_ratio"
-                            )
-                        else:
-                            # vLLM fallback
-                            num_wait = int(_pick(
-                                parsed,
-                                "vllm:num_requests_waiting", "vllm:num_waiting_requests",
-                                "vllm_num_requests_waiting", "vllm_num_waiting_requests",
-                                default=0
-                            ))
-                            num_run  = int(_pick(
-                                parsed,
-                                "vllm:num_requests_running", "vllm:num_running_requests",
-                                "vllm_num_requests_running", "vllm_num_running_requests",
-                                default=0
-                            ))
-                            token_pct = _pick_percent(
-                                parsed,
-                                "vllm:gpu_cache_usage_perc", "vllm:gpu_cache_percent", "vllm:gpu_cache_usage",
-                                "vllm_gpu_cache_usage_perc", "vllm_gpu_cache_percent", "vllm_gpu_cache_usage"
-                            )
-
+                        num_wait = int(_pick(parsed, "sglang:num_queue_reqs", default=0))
+                        num_run  = int(_pick(parsed, "sglang:num_running_reqs", default=0))
+                        token_pct = _pick_percent(parsed, "sglang:token_usage")
+                    
+                        else:  # vllm
+                            num_wait = int(_pick(parsed, "vllm:num_requests_waiting", default=0))
+                            num_run  = int(_pick(parsed, "vllm:num_requests_running", default=0))
+                            token_pct = _pick_percent(parsed, "vllm:gpu_cache_usage_perc")
+                        
 
                         sample = QueueMetricsSample(
                             timestamp=time.perf_counter() - start_time,
